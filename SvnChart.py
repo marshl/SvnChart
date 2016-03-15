@@ -50,9 +50,8 @@ def downloadLogFile():
     out, err = process.communicate()
     errcode = process.returncode
 
-    f = open("svn_log.xml", "wb")
-    f.write(out)
-
+    with open("svn_log.xml", "wb") as f:
+        f.write(out)
 
 def parseLogFile():
     
@@ -75,28 +74,26 @@ def printCommitTotalByWeek(log_entries):
     first_date = log_entries[0].date
     last_date = log_entries[-1].date
 
-    
-    f = open('commits_total.csv', 'w+')
-    f.write( "date,commits\n" )
+    with open('commits_total.csv', 'w+') as f:
+        f.write( "date,commits\n" )
 
-    current_date = first_date
-    commit_count = 0
+        current_date = first_date
+        commit_count = 0
 
-    for entry in log_entries:
-        if entry.date > current_date:
-            current_date += timedelta( weeks = 1 )
-            date_as_string = str(current_date)
-            f.write( date_as_string + "," + str(commit_count) + "\n" )
-            #commit_count = 0
+        for entry in log_entries:
+            if entry.date > current_date:
+                current_date += timedelta( weeks = 1 )
+                date_as_string = str(current_date)
+                f.write( date_as_string + "," + str(commit_count) + "\n" )
     
-        commit_count += 1
+            commit_count += 1
 
 def printCommitPerUserByWeek(log_entries):
     first_date = log_entries[0].date
     last_date = log_entries[-1].date
 
     current_date = first_date
-    f = open('commits_per_user.csv', 'w+')
+    
 
     user_commit_count = dict()
     
@@ -105,20 +102,21 @@ def printCommitPerUserByWeek(log_entries):
         if entry.author not in user_commit_count:
             user_commit_count[entry.author] = 0
 
-    f.write('date,')
-    f.write( ','.join( user_commit_count.keys() ) + "\n" )
+    with open('commits_per_user.csv', 'w+') as f:
+        f.write('date,')
+        f.write( ','.join( user_commit_count.keys() ) + "\n" )
 
-    for entry in log_entries:
-        if entry.date > current_date:
-            current_date += timedelta( weeks = 1 )            
-            f.write( str(current_date) )
+        for entry in log_entries:
+            if entry.date > current_date:
+                current_date += timedelta( weeks = 1 )            
+                f.write( str(current_date) )
             
-            for key in user_commit_count.keys():
-                f.write( ',' + str( user_commit_count[key] ) )
+                for key in user_commit_count.keys():
+                    f.write( ',' + str( user_commit_count[key] ) )
 
-            f.write("\n")
+                f.write("\n")
     
-        user_commit_count[entry.author] += 1
+            user_commit_count[entry.author] += 1
 
 def chartCommitTotalByWeek():
     commit_data = csv2rec('commits_total.csv')
@@ -142,7 +140,6 @@ def chartCommitTotalPerUserByWeek():
     
     column_count = len(commit_data.dtype.descr)
     last_date = commit_data['date'][-1]
-
 
     for i in commit_data.dtype.descr:
         column_name = i[0]
