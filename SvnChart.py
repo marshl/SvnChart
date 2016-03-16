@@ -101,28 +101,27 @@ def printCommitPerUserByWeek(log_entries):
 
     current_date = first_date
 
-    user_commit_count = dict()
+    user_commit_dict = dict()
 
-    # Find all unique author names (there has to be a better way to do this)
-    for entry in log_entries:
-        if entry.author not in user_commit_count:
-            user_commit_count[entry.author] = 0
+    # Map all unique author names to their commit count
+    user_commit_dict = dict(zip(map(lambda x: x.author, log_entries),
+                                [0]*len(log_entries)))
 
     with open('commits_per_user.csv', 'w+') as f:
         f.write('date,')
-        f.write(','.join(user_commit_count.keys())+"\n")
+        f.write(','.join(user_commit_dict.keys())+"\n")
 
         for entry in log_entries:
             if entry.date > current_date:
                 current_date += timedelta(weeks=1)
                 f.write(str(current_date))
 
-                for key in user_commit_count.keys():
-                    f.write(',' + str(user_commit_count[key]))
+                for key in user_commit_dict.keys():
+                    f.write(',' + str(user_commit_dict[key]))
 
                 f.write("\n")
 
-            user_commit_count[entry.author] += 1
+            user_commit_dict[entry.author] += 1
 
 
 def chartCommitTotalByWeek():
