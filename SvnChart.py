@@ -31,11 +31,11 @@ def main():
 
     log_entries = parseLogFile()
 
-    printCommitTotalByWeek(log_entries)
-    chartCommitTotalByWeek()
+    printCommitTotal(log_entries)
+    chartCommitTotal()
 
-    printCommitPerUserByWeek(log_entries)
-    chartCommitTotalPerUserByWeek()
+    printCommitPerUser(log_entries)
+    chartCommitTotalPerUser()
 
 
 class logEntry:
@@ -76,7 +76,7 @@ def parseLogFile():
     return log_entries
 
 
-def printCommitTotalByWeek(log_entries):
+def printCommitTotal(log_entries):
     first_date = log_entries[0].date
     last_date = log_entries[-1].date
 
@@ -88,14 +88,14 @@ def printCommitTotalByWeek(log_entries):
 
         for entry in log_entries:
             while entry.date > current_date:
-                current_date += timedelta(weeks=1)
+                current_date += timedelta(days=1)
                 date_as_string = str(current_date)
                 f.write(date_as_string + "," + str(commit_count) + "\n")
 
             commit_count += 1
 
 
-def printCommitPerUserByWeek(log_entries):
+def printCommitPerUser(log_entries):
     first_date = log_entries[0].date
     last_date = log_entries[-1].date
 
@@ -104,8 +104,7 @@ def printCommitPerUserByWeek(log_entries):
     user_commit_dict = dict()
 
     # Map all unique author names to their commit count
-    user_commit_dict = dict(zip(map(lambda x: x.author, log_entries),
-                                [0]*len(log_entries)))
+    user_commit_dict = dict(zip([x.author for x in log_entries], [0]*len(log_entries)))
 
     with open('commits_per_user.csv', 'w+') as f:
         f.write('date,')
@@ -113,7 +112,7 @@ def printCommitPerUserByWeek(log_entries):
 
         for entry in log_entries:
             while entry.date > current_date:
-                current_date += timedelta(weeks=1)
+                current_date += timedelta(days=1)
                 f.write(str(current_date))
 
                 for key in user_commit_dict.keys():
@@ -124,7 +123,7 @@ def printCommitPerUserByWeek(log_entries):
             user_commit_dict[entry.author] += 1
 
 
-def chartCommitTotalByWeek():
+def chartCommitTotal():
 
     commit_data = csv2rec('commits_total.csv')
     fig, ax = plt.subplots(1, 1, figsize=(12, 9))
@@ -139,7 +138,7 @@ def chartCommitTotalByWeek():
     plt.savefig('commits_total.svg', bbox_inches='tight')
 
 
-def chartCommitTotalPerUserByWeek():
+def chartCommitTotalPerUser():
 
     commit_data = csv2rec('commits_per_user.csv')
     fig, ax = plt.subplots(1, 1, figsize=(30, 22.5))
