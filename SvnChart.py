@@ -87,7 +87,7 @@ def printCommitTotalByWeek(log_entries):
         commit_count = 0
 
         for entry in log_entries:
-            if entry.date > current_date:
+            while entry.date > current_date:
                 current_date += timedelta(weeks=1)
                 date_as_string = str(current_date)
                 f.write(date_as_string + "," + str(commit_count) + "\n")
@@ -112,7 +112,7 @@ def printCommitPerUserByWeek(log_entries):
         f.write(','.join(user_commit_dict.keys())+"\n")
 
         for entry in log_entries:
-            if entry.date > current_date:
+            while entry.date > current_date:
                 current_date += timedelta(weeks=1)
                 f.write(str(current_date))
 
