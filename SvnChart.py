@@ -174,7 +174,8 @@ def chart_commit_total_per_user():
         truncated_data = numpy.append(truncated_data, last_commit_count)
 
         # Shrink the size of the date list to match the data list
-        truncated_dates = numpy.resize(all_commit_data.date, data.shape)
+        truncated_dates = numpy.resize(all_commit_data.date,
+                                       truncated_data.shape)
 
         line = plt.plot(truncated_dates,
                         truncated_data,
