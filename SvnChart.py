@@ -25,27 +25,33 @@ parser.add_option("-d", "--download", action="store_true", dest="download",
 (options, args) = parser.parse_args()
 
 
+color_sequence = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
+                  '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
+                  '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
+                  '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5']
+
+
 def main():
     if options.download or not os.path.isfile("svn_log.xml"):
-        downloadLogFile()
+        download_log_file()
 
-    log_entries = parseLogFile()
+    log_entries = parse_log_file()
 
-    printCommitTotal(log_entries)
-    chartCommitTotal()
+    print_commit_total(log_entries)
+    chart_commit_total()
 
-    printCommitPerUser(log_entries)
-    chartCommitTotalPerUser()
+    print_commit_total_per_user(log_entries)
+    chart_commit_total_per_user()
 
 
-class logEntry:
+class LogEntry:
 
     def __init__(self, date, author):
         self.date = date
         self.author = author
 
 
-def downloadLogFile():
+def download_log_file():
 
     pargs = ["svn", "log", args[0], "--xml",
              "--username", options.username,
@@ -60,7 +66,7 @@ def downloadLogFile():
         f.write(out)
 
 
-def parseLogFile():
+def parse_log_file():
 
     log_entries = []
     e = xml.etree.ElementTree.parse('svn_log.xml').getroot()
@@ -69,16 +75,15 @@ def parseLogFile():
     for entry in e.findall('logentry[author]'):
         date = dateutil.parser.parse(entry.find('date').text)
         author = entry.find('author').text
-        le = logEntry(date, author)
+        le = LogEntry(date, author)
         log_entries.append(le)
 
     log_entries = sorted(log_entries, key=lambda entry: entry.date)
     return log_entries
 
 
-def printCommitTotal(log_entries):
+def print_commit_total(log_entries):
     first_date = log_entries[0].date
-    last_date = log_entries[-1].date
 
     with open('commits_total.csv', 'w+') as f:
         f.write("date,commits\n")
@@ -95,7 +100,7 @@ def printCommitTotal(log_entries):
             commit_count += 1
 
 
-def printCommitPerUser(log_entries):
+def print_commit_total_per_user(log_entries):
     first_date = log_entries[0].date
     last_date = log_entries[-1].date
 
@@ -104,7 +109,8 @@ def printCommitPerUser(log_entries):
     user_commit_dict = dict()
 
     # Map all unique author names to their commit count
-    user_commit_dict = dict(zip([x.author for x in log_entries], [0]*len(log_entries)))
+    user_commit_dict = dict(zip([x.author for x in log_entries],
+                                [0]*len(log_entries)))
 
     with open('commits_per_user.csv', 'w+') as f:
         f.write('date,')
@@ -123,7 +129,7 @@ def printCommitPerUser(log_entries):
             user_commit_dict[entry.author] += 1
 
 
-def chartCommitTotal():
+def chart_commit_total():
 
     commit_data = csv2rec('commits_total.csv')
     fig, ax = plt.subplots(1, 1, figsize=(12, 9))
@@ -138,41 +144,51 @@ def chartCommitTotal():
     plt.savefig('commits_total.svg', bbox_inches='tight')
 
 
-def chartCommitTotalPerUser():
+def chart_commit_total_per_user():
 
-    commit_data = csv2rec('commits_per_user.csv')
+    all_commit_data = csv2rec('commits_per_user.csv')
     fig, ax = plt.subplots(1, 1, figsize=(30, 22.5))
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
-    column_count = len(commit_data.dtype.descr)
-    last_date = commit_data['date'][-1]
+    last_date = all_commit_data['date'][-1]
 
-    for i in commit_data.dtype.descr:
+    for i in range(len(all_commit_data.dtype.descr)):
 
-        column_name = i[0]
+        desc = all_commit_data.dtype.descr[i]
+        column_name = desc[0]
 
+        # The date column is used as the X axis, and doesn't need to be graphed
         if column_name == 'date':
             continue
 
-        d = commit_data[column_name]
+        data = all_commit_data[column_name]
+        last_commit_count = data[-1]
 
-        randColor = "#%06x" % random.randint(0, 0xFFFFFF)
+        # Remove all the records with the same commit count as the last record
+        # That way the line stops when the author stops making commits
+        truncated_data = numpy.delete(data,
+                                      numpy.where(data == last_commit_count))
 
-        line = plt.plot(commit_data.date,
-                        d,
+        # Except we just removed the last record, better put that back
+        truncated_data = numpy.append(truncated_data, last_commit_count)
+
+        # Shrink the size of the date list to match the data list
+        truncated_dates = numpy.resize(all_commit_data.date, data.shape)
+
+        line = plt.plot(truncated_dates,
+                        truncated_data,
                         lw=2.5,
-                        color=randColor)
+                        color=lineColour)
 
-        y_pos = commit_data[column_name][-1] - 0.5
-        commit_count = d[-1]
         msg = "{user} ({commits})".format(user=column_name,
-                                          commits=commit_count),
-        plt.text(last_date,
-                 y_pos,
+                                          commits=last_commit_count)
+
+        plt.text(truncated_dates[-1] + timedelta(days=1),
+                 last_commit_count - 0.5,
                  msg,
                  fontsize=8,
-                 color=randColor)
+                 color=color_sequence[i % len(color_sequence)])
 
     plt.savefig('commits_per_user.svg', bbox_inches='tight')
 
