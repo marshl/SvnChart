@@ -177,6 +177,8 @@ def chart_commit_total_per_user():
         truncated_dates = numpy.resize(all_commit_data.date,
                                        truncated_data.shape)
 
+        lineColour = color_sequence[i % len(color_sequence)]
+
         line = plt.plot(truncated_dates,
                         truncated_data,
                         lw=2.5,
@@ -189,7 +191,7 @@ def chart_commit_total_per_user():
                  last_commit_count - 0.5,
                  msg,
                  fontsize=8,
-                 color=color_sequence[i % len(color_sequence)])
+                 color=lineColour)
 
     plt.savefig('commits_per_user.svg', bbox_inches='tight')
 
