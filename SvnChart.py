@@ -1,4 +1,9 @@
-﻿from optparse import OptionParser
+﻿# -*- coding: utf-8 -*-
+""" SVN Chart
+"""
+
+# Imports
+from optparse import OptionParser
 from subprocess import call, Popen
 import subprocess
 import xml.etree.ElementTree
@@ -11,63 +16,41 @@ from matplotlib.cbook import get_sample_data
 import numpy
 import random
 
-parser = OptionParser()
-parser.add_option("-u", "--username", dest="username",
-                  help="the user to connect as")
-
-parser.add_option("-p", "--password", dest="password",
-                  help="the password of the user")
-
-parser.add_option("-d", "--download", action="store_true", dest="download",
-                  help="downloads the log file even if it already exists")
-
-
-(options, args) = parser.parse_args()
-
-
 color_sequence = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
                   '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
                   '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
                   '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5']
 
 
-def main():
-    if options.download or not os.path.isfile("svn_log.xml"):
-        download_log_file()
-
-    log_entries = parse_log_file()
-
-    print_commit_total(log_entries)
-    chart_commit_total()
-
-    print_commit_total_per_user(log_entries)
-    chart_commit_total_per_user()
-
-
 class LogEntry:
-
     def __init__(self, date, author):
         self.date = date
         self.author = author
 
 
-def download_log_file():
+def download_log_file(url, username, password):
+    if len(args) != 1:
+        return False
 
-    pargs = ["svn", "log", args[0], "--xml",
-             "--username", options.username,
-             "--password", options.password]
+    pargs = ["svn", "log", url, "--xml",
+             "--username", username,
+             "--password", password]
     process = subprocess.Popen(pargs, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
 
-    out, err = process.communicate()
+    (out, err) = process.communicate()
     errcode = process.returncode
+
+    if errcode != 0:
+        exit(errcode)
 
     with open('svn_log.xml', 'wb') as f:
         f.write(out)
 
+    return True
+
 
 def parse_log_file():
-
     log_entries = []
     e = xml.etree.ElementTree.parse('svn_log.xml').getroot()
 
@@ -110,11 +93,11 @@ def print_commit_total_per_user(log_entries):
 
     # Map all unique author names to their commit count
     user_commit_dict = dict(zip([x.author for x in log_entries],
-                                [0]*len(log_entries)))
+                                [0] * len(log_entries)))
 
     with open('commits_per_user.csv', 'w+') as f:
         f.write('date,')
-        f.write(','.join(user_commit_dict.keys())+"\n")
+        f.write(','.join(user_commit_dict.keys()) + "\n")
 
         for entry in log_entries:
             while entry.date > current_date:
@@ -130,7 +113,6 @@ def print_commit_total_per_user(log_entries):
 
 
 def chart_commit_total():
-
     commit_data = csv2rec('commits_total.csv')
     fig, ax = plt.subplots(1, 1, figsize=(12, 9))
     ax.get_xaxis().tick_bottom()
@@ -139,13 +121,12 @@ def chart_commit_total():
     line = plt.plot(commit_data.date,
                     commit_data['commits'],
                     lw=2.5,
-                    color='#1f77b4')
+                    color=color_sequence[0])
 
     plt.savefig('commits_total.svg', bbox_inches='tight')
 
 
 def chart_commit_total_per_user():
-
     all_commit_data = csv2rec('commits_per_user.csv')
     fig, ax = plt.subplots(1, 1, figsize=(30, 22.5))
     ax.get_xaxis().tick_bottom()
@@ -195,5 +176,35 @@ def chart_commit_total_per_user():
 
     plt.savefig('commits_per_user.svg', bbox_inches='tight')
 
+
+def build_option_parser():
+    parser = OptionParser()
+    parser.add_option("-u", "--username", dest="username",
+                      help="the user to connect as")
+
+    parser.add_option("-p", "--password", dest="password",
+                      help="the password of the user")
+
+    parser.add_option("-d", "--download", action="store_true", dest="download",
+                      help="downloads the log file even if it already exists")
+
+    return parser
+
+
 if __name__ == "__main__":
-    main()
+
+    parser = build_option_parser()
+    (options, args) = parser.parse_args()
+
+    if options.download or not os.path.isfile("svn_log.xml"):
+        result = download_log_file(args[0], options.username, options.password)
+        if not result:
+            exit(1)
+
+    log_entries = parse_log_file()
+
+    print_commit_total(log_entries)
+    chart_commit_total()
+
+    print_commit_total_per_user(log_entries)
+    chart_commit_total_per_user()
