@@ -62,9 +62,8 @@ def print_commit_total_per_user(log_entries):
 
     current_date = first_date
 
-    # Map all unique author names to their commit count
-    user_commit_dict = dict(zip([x.author for x in log_entries],
-                                [0] * len(log_entries)))
+    # Create a dictionary of each author to their commit count (starting at 0)
+    user_commit_dict = dict([x.author or "unknown", 0] for x in log_entries)
 
     with open('commits_per_user.csv', 'w+') as f:
         f.write('date,')
