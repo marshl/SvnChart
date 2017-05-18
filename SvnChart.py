@@ -35,14 +35,14 @@ class LogEntry:
 def get_svn_log(url, username, password):
     repo = svn.utility.get_client(url)
 
-    return list(reversed(list(repo.log_default())))
+    return sorted(list(repo.log_default()), key=lambda x: x.date)
 
 
 def print_commit_total(log_entries):
     with open('commits_total.csv', 'w+') as f:
         f.write("date,commits\n")
 
-        current_date = log_entries[0].date
+        current_date = min(x.date for x in log_entries)
         commit_count = 0
 
         for entry in log_entries:
@@ -58,7 +58,7 @@ def print_commit_total(log_entries):
 
 
 def print_commit_total_per_user(log_entries):
-    first_date = log_entries[0].date
+    first_date = min(x.date for x in log_entries)
 
     current_date = first_date
 
