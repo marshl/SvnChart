@@ -4,22 +4,26 @@
 
 # Imports
 from optparse import OptionParser
-from subprocess import call, Popen
-import subprocess
-import xml.etree.ElementTree
-import os.path
-import dateutil.parser
+# from subprocess import call, Popen
+# import subprocess
+# import xml.etree.ElementTree
+# import os.path
+# import dateutil.parser
 from datetime import timedelta
 import matplotlib.pyplot as plt
 from matplotlib.mlab import csv2rec
-from matplotlib.cbook import get_sample_data
+import svn.utility
+# from matplotlib.cbook import get_sample_data
 import numpy
-import random
+
+# import random
 
 color_sequence = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
                   '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
                   '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
                   '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5']
+
+graph_time_delta = timedelta(days=1)
 
 
 class LogEntry:
@@ -28,68 +32,35 @@ class LogEntry:
         self.author = author
 
 
-def download_log_file(url, username, password):
-    if len(args) != 1:
-        return False
+def get_svn_log(url, username, password):
+    repo = svn.utility.get_client(url)
 
-    pargs = ["svn", "log", url, "--xml",
-             "--username", username,
-             "--password", password]
-    process = subprocess.Popen(pargs, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-
-    (out, err) = process.communicate()
-    errcode = process.returncode
-
-    if errcode != 0:
-        exit(errcode)
-
-    with open('svn_log.xml', 'wb') as f:
-        f.write(out)
-
-    return True
-
-
-def parse_log_file():
-    log_entries = []
-    e = xml.etree.ElementTree.parse('svn_log.xml').getroot()
-
-    # Only find the log entries that have an author
-    for entry in e.findall('logentry[author]'):
-        date = dateutil.parser.parse(entry.find('date').text)
-        author = entry.find('author').text
-        le = LogEntry(date, author)
-        log_entries.append(le)
-
-    log_entries = sorted(log_entries, key=lambda entry: entry.date)
-    return log_entries
+    return list(reversed(list(repo.log_default())))
 
 
 def print_commit_total(log_entries):
-    first_date = log_entries[0].date
-
     with open('commits_total.csv', 'w+') as f:
         f.write("date,commits\n")
 
-        current_date = first_date
+        current_date = log_entries[0].date
         commit_count = 0
 
         for entry in log_entries:
+
             while entry.date > current_date:
-                current_date += timedelta(days=1)
-                date_as_string = str(current_date)
-                f.write(date_as_string + "," + str(commit_count) + "\n")
+                current_date += graph_time_delta
+                f.write(str(current_date) + "," + str(commit_count) + "\n")
 
             commit_count += 1
+
+        current_date += graph_time_delta
+        f.write(str(current_date) + "," + str(commit_count) + "\n")
 
 
 def print_commit_total_per_user(log_entries):
     first_date = log_entries[0].date
-    last_date = log_entries[-1].date
 
     current_date = first_date
-
-    user_commit_dict = dict()
 
     # Map all unique author names to their commit count
     user_commit_dict = dict(zip([x.author for x in log_entries],
@@ -192,16 +163,10 @@ def build_option_parser():
 
 
 if __name__ == "__main__":
-
     parser = build_option_parser()
     (options, args) = parser.parse_args()
 
-    if options.download or not os.path.isfile("svn_log.xml"):
-        result = download_log_file(args[0], options.username, options.password)
-        if not result:
-            exit(1)
-
-    log_entries = parse_log_file()
+    log_entries = get_svn_log(args[0], options.username, options.password)
 
     print_commit_total(log_entries)
     chart_commit_total()
