@@ -79,7 +79,7 @@ def print_commit_total_per_user(log_entries):
 
                 f.write("\n")
 
-            user_commit_dict[entry.author] += 1
+            user_commit_dict[entry.author or "unknown"] += 1
 
 
 def chart_commit_total():
