@@ -71,7 +71,7 @@ def print_commit_total_per_user(log_entries):
 
         for entry in log_entries:
             while entry.date > current_date:
-                current_date += timedelta(days=1)
+                current_date += graph_time_delta
                 f.write(str(current_date))
 
                 for key in user_commit_dict.keys():
@@ -102,8 +102,6 @@ def chart_commit_total_per_user():
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
-    last_date = all_commit_data['date'][-1]
-
     for i in range(len(all_commit_data.dtype.descr)):
 
         desc = all_commit_data.dtype.descr[i]
@@ -128,21 +126,21 @@ def chart_commit_total_per_user():
         truncated_dates = numpy.resize(all_commit_data.date,
                                        truncated_data.shape)
 
-        lineColour = color_sequence[i % len(color_sequence)]
+        line_colour = color_sequence[i % len(color_sequence)]
 
         line = plt.plot(truncated_dates,
                         truncated_data,
                         lw=2.5,
-                        color=lineColour)
+                        color=line_colour)
 
         msg = "{user} ({commits})".format(user=column_name,
                                           commits=last_commit_count)
 
-        plt.text(truncated_dates[-1] + timedelta(days=1),
-                 last_commit_count - 0.5,
+        plt.text(truncated_dates[-1] + graph_time_delta * 5,
+                 last_commit_count,
                  msg,
                  fontsize=8,
-                 color=lineColour)
+                 color=line_colour)
 
     plt.savefig('commits_per_user.svg', bbox_inches='tight')
 
