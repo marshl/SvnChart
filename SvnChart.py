@@ -10,6 +10,11 @@ from matplotlib.mlab import csv2rec
 import svn.utility
 import numpy
 
+commits_total_csv_path = "commits_total.csv"
+commits_per_user_csv_path = "commits_per_user.csv"
+
+commits_total_svg_path = "commits_total.svg"
+commits_per_user_svg_path = "commits_per_user.svg"
 
 color_sequence = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
                   '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
@@ -32,7 +37,7 @@ def get_svn_log(url, username, password):
 
 
 def print_commit_total(log_entries):
-    with open('commits_total.csv', 'w+') as f:
+    with open(commits_total_csv_path, 'w+') as f:
         f.write("date,commits\n")
 
         current_date = min(x.date for x in log_entries)
@@ -58,7 +63,7 @@ def print_commit_total_per_user(log_entries):
     # Create a dictionary of each author to their commit count (starting at 0)
     user_commit_dict = dict([x.author or "unknown", 0] for x in log_entries)
 
-    with open('commits_per_user.csv', 'w+') as f:
+    with open(commits_per_user_csv_path, 'w+') as f:
         f.write('date,')
         f.write(','.join(user_commit_dict.keys()) + "\n")
 
@@ -76,7 +81,7 @@ def print_commit_total_per_user(log_entries):
 
 
 def chart_commit_total():
-    commit_data = csv2rec('commits_total.csv')
+    commit_data = csv2rec(commits_total_csv_path)
     fig, ax = plt.subplots(1, 1, figsize=(12, 9))
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
@@ -86,11 +91,11 @@ def chart_commit_total():
                     lw=2.5,
                     color=color_sequence[0])
 
-    plt.savefig('commits_total.svg', bbox_inches='tight')
+    plt.savefig(commits_total_svg_path, bbox_inches='tight')
 
 
 def chart_commit_total_per_user():
-    all_commit_data = csv2rec('commits_per_user.csv')
+    all_commit_data = csv2rec(commits_per_user_csv_path)
     fig, ax = plt.subplots(1, 1, figsize=(30, 22.5))
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
@@ -135,7 +140,7 @@ def chart_commit_total_per_user():
                  fontsize=8,
                  color=line_colour)
 
-    plt.savefig('commits_per_user.svg', bbox_inches='tight')
+    plt.savefig(commits_per_user_svg_path, bbox_inches='tight')
 
 
 def build_option_parser():
