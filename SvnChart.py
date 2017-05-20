@@ -4,19 +4,12 @@
 
 # Imports
 from optparse import OptionParser
-# from subprocess import call, Popen
-# import subprocess
-# import xml.etree.ElementTree
-# import os.path
-# import dateutil.parser
 from datetime import timedelta
 import matplotlib.pyplot as plt
 from matplotlib.mlab import csv2rec
 import svn.utility
-# from matplotlib.cbook import get_sample_data
 import numpy
 
-# import random
 
 color_sequence = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
                   '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
