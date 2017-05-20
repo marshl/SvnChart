@@ -94,6 +94,8 @@ def chart_commit_total_per_user():
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
+    user_labels = []
+
     for i in range(len(all_commit_data.dtype.descr)):
 
         desc = all_commit_data.dtype.descr[i]
@@ -120,19 +122,22 @@ def chart_commit_total_per_user():
 
         line_colour = color_sequence[i % len(color_sequence)]
 
+        user_labels.append({'username': column_name,
+                           'commits': last_commit_count,
+                           'last_date': truncated_dates[-1],
+                           'colour': line_colour})
+
         line = plt.plot(truncated_dates,
                         truncated_data,
                         lw=2.5,
                         color=line_colour)
 
-        msg = "{user} ({commits})".format(user=column_name,
-                                          commits=last_commit_count)
-
-        plt.text(truncated_dates[-1] + graph_time_delta * 5,
-                 last_commit_count,
-                 msg,
+    for label in user_labels:
+        plt.text(label['last_date'],
+                 label['commits'],
+                 ' {0} ({1})'.format(label['username'], label['commits']),
                  fontsize=8,
-                 color=line_colour)
+                 color=label['colour'])
 
     plt.savefig(commits_per_user_svg_path, bbox_inches='tight')
 
